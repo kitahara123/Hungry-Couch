@@ -1,60 +1,42 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class AIStateSwitcher : MonoBehaviour
 {
     private List<AIState> states;
-    private bool locked;
     private AIState prevState;
     private AIState defaultState;
 
     private void Start()
     {
-        states = new List<AIState>();
-
-        foreach (var component in GetComponents<AIState>())
-        {
-            states.Add(component);
-        }
-
-        Debug.Log(states.Count);
+        states = GetComponents<AIState>().ToList();
 
         foreach (var state in states)
         {
-            if (state.isDefault)
+            state.OnStateStarted += StartState;
+            state.OnStateEnded += EndState;
+            if (state.IsDefault)
             {
-                state.enabled = true;
+                state.Active = true;
                 prevState = state;
                 defaultState = state;
             }
             else
-                state.enabled = false;
-        }
-    }
-
-    private void Update()
-    {
-        if (locked) return;
-
-        foreach (var state in states)
-        {
-            if (state.IsSwitchNeeded())
-            {
-                locked = true;
-                prevState.enabled = false;
-                state.enabled = true;
-
-                state.OnStateEnded += EndState;
-                return;
-            }
+                state.Active = false;
         }
     }
 
     private void EndState(AIState state)
     {
-        state.enabled = false;
         prevState = state;
-        defaultState.enabled = true;
-        locked = false;
+        StartState(defaultState);
+    }
+    
+    private void StartState(AIState state)
+    {
+        prevState.Active = false;
+        state.Active = true;
+        prevState = state;
     }
 }

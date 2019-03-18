@@ -1,44 +1,58 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 public class AggressiveAI : AIState
 {
     [SerializeField] private float meleeRange = 1;
     [SerializeField] private float speed = 3;
-    private bool active = false;
+    [SerializeField] private int damage = 3;
+    [SerializeField] private float attackCD = 2;
+    
+    private bool cooldown;
     private Transform player;
 
     public override event Action<AIState> OnStateEnded;
-
-    public override bool IsSwitchNeeded()
-    {
-        return active;
-    }
+    public override event Action<AIState> OnStateStarted;
 
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!other.CompareTag("Player")) return;
-        active = true;
         player = other.transform;
+        OnStateStarted?.Invoke(this);
     }
 
     private void OnTriggerExit2D(Collider2D other)
     {
         if (!other.CompareTag("Player")) return;
-        active = false;
         OnStateEnded?.Invoke(this);
     }
 
     private void Update()
     {
-        if (!active) return;
+        if (!Active) return;
+        if (!creature.Alive) return;
 
-        var direction = player.position - Camera.main.WorldToScreenPoint(transform.position);
+        var direction = player.position - transform.position;
 
         var angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
         transform.rotation = Quaternion.Euler(0, 0, angle);
 
-        if (Vector3.Distance(player.position, transform.position) < meleeRange)
-            transform.Translate(Vector3.up * speed * Time.deltaTime);
+        var distance = Vector3.Distance(player.position, transform.position);
+        if (distance > meleeRange)
+            transform.Translate(Vector3.right * speed * Time.deltaTime);
+        
+        if (!cooldown && meleeRange >= distance)
+            StartCoroutine(Attack());
+        
     }
+    
+    private IEnumerator Attack()
+    {
+        cooldown = true;
+        player.gameObject.GetComponent<Creature>().Hurt(damage);
+        yield return new WaitForSeconds(attackCD);
+        cooldown = false;
+    }
+
 }

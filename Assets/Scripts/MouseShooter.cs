@@ -1,31 +1,40 @@
+using System.Collections;
 using UnityEngine;
 
+
+[RequireComponent(typeof(WeaponSystem))]
 public class MouseShooter : MonoBehaviour
 {
-
-    [SerializeField] private Projectile projectile;
     [SerializeField] private Transform gun;
-    
-    private MonoObjectsPool<Projectile> projPool;
+
+    private WeaponSystem weaponSystem;
+
+    private bool cooldown = false;
 
     private void Start()
     {
-        projPool = new MonoObjectsPool<Projectile>(projectile);
+        weaponSystem = GetComponent<WeaponSystem>();
     }
 
     private void Update()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (!cooldown && Input.GetMouseButtonDown(0))
         {
-            var proj = projPool.CreateInstance(10);
-            proj.OnDestroyed += OnProjectileDestroyed;
-            proj.transform.rotation = transform.rotation * projectile.transform.rotation;
-            proj.transform.position = gun.position;
+            StartCoroutine(Attack());
         }
     }
-    
-    private void OnProjectileDestroyed(Projectile obj)
+
+    private IEnumerator Attack()
     {
-        projPool.RemoveInstance(obj);
+        cooldown = true;
+
+        var proj = weaponSystem.CurrentWeapon.ProjPool.CreateInstance(weaponSystem.CurrentWeapon.Projectile.Lifetime);
+        proj.OnDestroyed += weaponSystem.CurrentWeapon.DestroyProj;
+        proj.transform.rotation = transform.rotation * weaponSystem.CurrentWeapon.Projectile.transform.rotation;
+        proj.transform.position = gun.position;
+        weaponSystem.PlayShot();
+
+        yield return new WaitForSeconds(weaponSystem.CurrentWeapon.Cooldown);
+        cooldown = false;
     }
 }

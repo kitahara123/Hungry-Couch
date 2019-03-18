@@ -5,7 +5,10 @@ public class Projectile : MonoBehaviour
 {
     [SerializeField] private int damage = 1;
     [SerializeField] private float speed = 1;
+    [SerializeField] private float lifetime = 10;
     public event Action<Projectile> OnDestroyed;
+
+    public float Lifetime => lifetime;
 
     private void Update()
     {
@@ -15,15 +18,14 @@ public class Projectile : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.isTrigger || other.CompareTag("Player")) return;
-//        var creature = other.GetComponent<Creature>();
-//        if (creature == null)
-//        {
-//            OnDestroyed?.Invoke(this);
-//            return;
-//        }
+        var creature = other.GetComponent<Creature>();
+        if (creature == null)
+        {
+            OnDestroyed?.Invoke(this);
+            return;
+        }
 
-//        if (other.CompareTag(Shooter?.tag)) return;
-//        creature.Hurt(damage);
+        creature.Hurt(damage);
         OnDestroyed?.Invoke(this);
     }
 

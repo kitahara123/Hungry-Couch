@@ -8,17 +8,15 @@ public class WanderingAI : AIState
     [SerializeField] private float obstacleRange = 5.0f;
 
     public override event Action<AIState> OnStateEnded;
-
-    public override bool IsSwitchNeeded()
-    {
-        return true;
-    }
+    public override event Action<AIState> OnStateStarted;
 
     private void Update()
     {
-        transform.Translate(Vector3.up * speed * Time.deltaTime);
+        if (!Active || !creature.Alive) return;
 
-        RaycastHit2D hit = Physics2D.BoxCast(transform.position, transform.localScale, 0, transform.up, obstacleRange,
+        transform.Translate(Vector3.right * speed * Time.deltaTime);
+
+        RaycastHit2D hit = Physics2D.BoxCast(transform.position, transform.localScale, 0, transform.right, obstacleRange,
             LayerMask.GetMask("Walls"));
 
         if (hit)
